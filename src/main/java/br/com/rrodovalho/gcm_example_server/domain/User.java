@@ -9,21 +9,21 @@ import java.util.Calendar;
  * Created by rrodovalho on 14/01/16.
  */
 
-@Entity
-@Table(name = "user")
+/*@Entity
+@Table(name = "user")*/
 public class User{
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    //@Id
+    //@GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @NotNull
+    //@NotNull
     private String registrationID;
 
-    @NotNull
+    //@NotNull
     private String name;
 
-    @NotNull
+    //@NotNull
     private java.sql.Timestamp registrationDate;
 
     public User() { }

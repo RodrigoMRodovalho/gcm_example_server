@@ -18,17 +18,26 @@ public class PushMessageContent {
     private String restricted_package_name;
     private boolean dry_run;
     private Map<String,String> data;
+    private Map<String,String> notification;
     private ArrayList<String> registration_ids;
 
-    public PushMessageContent(String collapse_key, boolean delay_while_idle, int time_to_live, String restricted_package_name, boolean dry_run, Map<String, String> data, ArrayList<String> registration_ids) {
-
+    public PushMessageContent(String collapse_key, boolean delay_while_idle, int time_to_live, String restricted_package_name, boolean dry_run, Map<String, String> data, Map<String, String> notification, ArrayList<String> registration_ids) {
         this.collapse_key = collapse_key;
         this.delay_while_idle = delay_while_idle;
         this.time_to_live = time_to_live;
         this.restricted_package_name = restricted_package_name;
         this.dry_run = dry_run;
         this.data = data;
+        this.notification = notification;
         this.registration_ids = registration_ids;
+    }
+
+    public Map<String, String> getNotification() {
+        return notification;
+    }
+
+    public void setNotification(Map<String, String> notification) {
+        this.notification = notification;
     }
 
     public String getCollapse_key() {

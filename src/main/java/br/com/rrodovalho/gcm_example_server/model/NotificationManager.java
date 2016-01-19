@@ -2,19 +2,32 @@ package br.com.rrodovalho.gcm_example_server.model;
 
 import br.com.rrodovalho.gcm_example_server.domain.PushMessageContent;
 import br.com.rrodovalho.gcm_example_server.domain.PushMessageResponse;
+import br.com.rrodovalho.gcm_example_server.domain.User;
+import br.com.rrodovalho.gcm_example_server.service.UserService;
 import com.google.gson.Gson;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 
+import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by rrodovalho on 17/01/16.
  */
+
 public class NotificationManager {
+
+
+    @Autowired
+    @Qualifier("userService")
+    private UserService userDAO;
 
     private PushMessageContent mPayload;
     private String mAPI_Key;
@@ -57,16 +70,16 @@ public class NotificationManager {
 
                     String newRegistrationID = result.get("registration_id").toString();
                     //TODO make this call works
-                   userDAO.updateUser(newRegistrationID,mPayload.getRegistration_ids().get(index));
+                    //userDAO.updateUser(newRegistrationID,mPayload.getRegistration_ids().get(index));
 
                }
                else {
                    if(result.containsKey("error")){
-                        if(result.get("error").toString().equals("Not Registered")){
-
-                            //TODO make this call works
-                            userDao.deleteUser(mPayload.getRegistration_ids().get(index));
-
+                        if(result.get("error").toString().equals("NotRegistered")){
+                            String regID = mPayload.getRegistration_ids().get(index);
+                            //TODO make it works
+                            if(userDAO!=null)
+                                userDAO.deleteUserByRegistrationID(regID);
                         }
                    }
                }
