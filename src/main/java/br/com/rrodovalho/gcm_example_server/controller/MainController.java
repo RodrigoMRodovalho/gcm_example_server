@@ -5,12 +5,10 @@ import br.com.rrodovalho.gcm_example_server.domain.PushMessageContent;
 import br.com.rrodovalho.gcm_example_server.domain.User;
 import br.com.rrodovalho.gcm_example_server.model.NotificationManager;
 import br.com.rrodovalho.gcm_example_server.service.UserService;
+import com.google.gson.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -20,35 +18,53 @@ import java.util.Map;
 public class MainController {
 
     @Autowired
-    //private UserDAO userDAO;
     private UserService userDAO;
+
 
     @RequestMapping(value="/user/register",method = RequestMethod.POST)
     public void registerUser(@RequestBody User user){
-        user.setCurrentDate();
+        user.setRegistrationDate(new java.sql.Timestamp(Calendar.getInstance().getTimeInMillis()));
         int rowsAffected = userDAO.saveUser(user);
         if(rowsAffected>0){
-            //hanle success
+            System.out.println("User saved");
         }
     }
 
     @RequestMapping(value = "/user", method = RequestMethod.GET)
     public @ResponseBody User getUser(String name) {
-        return userDAO.getUser(name);
+        return userDAO.getUserByName(name);
     }
 
-    @RequestMapping(value = "/send-push",method = RequestMethod.GET)
-    public void sendPushNotification(String name){
+    @RequestMapping(value = "/send-push",method = RequestMethod.POST)
+    public @ResponseBody String sendPushNotification(@RequestBody String content){
 
-        User user = userDAO.getUser(name);
-        if(user!=null){
+        JsonParser parser = new JsonParser();
+        JsonObject o = parser.parse(content).getAsJsonObject();
+
+        ArrayList<String> registrationIDs = new ArrayList<>();
+        if(o.get("toAll").getAsBoolean()){
+            List<User> users = userDAO.getAllUsers();
+            for(int i=0;i<users.size();i++){
+                registrationIDs.add(users.get(i).getRegistrationID());
+            }
+        }
+        else{
+            JsonArray userIDs = o.getAsJsonArray("user_ids");
+            String regID = null;
+            for(int i=0;i<userIDs.size();i++){
+                regID = userDAO.getRegistrationIDByUserID(userIDs.get(i).getAsInt());
+                if(regID!=null){
+                    registrationIDs.add(regID);
+                }
+            }
+        }
+
+        if(registrationIDs.size()>0){
 
             Map<String,String> data = new HashMap<>();
-            data.put("title","Pusvvzh");
-            data.put("message","Notification");
+            data.put("title",o.get("title").getAsString());
+            data.put("message",o.get("message").getAsString());
 
-            ArrayList<String> registrationIDs = new ArrayList<>();
-            registrationIDs.add(user.getRegistrationID());
 
             PushMessageContent pushMessageContent =
                     new PushMessageContent("gcm_example"
@@ -59,21 +75,19 @@ public class MainController {
                             ,data
                             ,null
                             ,registrationIDs
-            );
-            NotificationManager notificationManager =
-                    new NotificationManager(pushMessageContent, GcmExampleServerApplication.SENDER_API_KEY);
+                    );
 
-            notificationManager.sendNotification();
+            NotificationManager notificationManager = new NotificationManager(userDAO,pushMessageContent, GcmExampleServerApplication.SENDER_API_KEY);
+
+            return notificationManager.sendNotification();
 
             //collapse_key - caso o device esteja desligado, e voce mande mtas mensagens
             // , o gcm n garante ordem de entrega
             //  entao, se utilizar essa flag, ele vai guardar no servidor do gcm somente a ultima mensagem
             // dessa tag
-
-
-
         }
 
+        return "{\"error\":\"No users found\"}";
     }
 
 }

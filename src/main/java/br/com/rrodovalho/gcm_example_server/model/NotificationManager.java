@@ -9,52 +9,25 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by rrodovalho on 17/01/16.
  */
-
+@Data
+@AllArgsConstructor
 public class NotificationManager {
 
 
-    @Autowired
-    @Qualifier("userService")
-    private UserService userDAO;
-
+    private UserService mUserDAO;
     private PushMessageContent mPayload;
     private String mAPI_Key;
     public static final String GCM_API_URL="https://android.googleapis.com/gcm/send";
     public static final int SUCCESSFUL_SEND_CODE=200;
-
-
-    public NotificationManager(PushMessageContent payload, String API_Key) {
-        mPayload = payload;
-        mAPI_Key = API_Key;
-    }
-
-    public PushMessageContent getPayload() {
-        return mPayload;
-    }
-
-    public void setPayload(PushMessageContent payload) {
-        mPayload = payload;
-    }
-
-    public String getAPI_Key() {
-        return mAPI_Key;
-    }
-
-    public void setAPI_Key(String API_Key) {
-        mAPI_Key = API_Key;
-    }
 
     //Ref - https://developers.google.com/cloud-messaging/http-server-ref
     public void analyseGCMResponse(String response){
@@ -64,22 +37,27 @@ public class NotificationManager {
        if(pushMessageResponse.getCanonical_ids()>0 || pushMessageResponse.getFailure()>0){
 
            int index = 0;
+           int rowsAffected = 0;
            for (Map result:pushMessageResponse.getResults()) {
 
                if(result.containsKey("registration_id")){
 
                     String newRegistrationID = result.get("registration_id").toString();
-                    //TODO make this call works
-                    //userDAO.updateUser(newRegistrationID,mPayload.getRegistration_ids().get(index));
+                    rowsAffected = mUserDAO.updateUserByRegistrationID(newRegistrationID,mPayload.getRegistration_ids().get(index));
+                    if(rowsAffected>0){
+                        System.out.println("User updated");
+                    }
 
                }
                else {
                    if(result.containsKey("error")){
                         if(result.get("error").toString().equals("NotRegistered")){
                             String regID = mPayload.getRegistration_ids().get(index);
-                            //TODO make it works
-                            if(userDAO!=null)
-                                userDAO.deleteUserByRegistrationID(regID);
+                            rowsAffected = mUserDAO.deleteUserByRegistrationID(regID);
+                            if(rowsAffected>0){
+                                System.out.println("User Deleted");
+                            }
+
                         }
                    }
                }
@@ -89,14 +67,14 @@ public class NotificationManager {
 
     }
 
-    public void sendNotification(){
+    public String sendNotification(){
 
         Map<String,String> headers = new HashMap<>();
         headers.put("Content-Type","application/json");
         headers.put("Authorization","key="+ mAPI_Key);
 
         String json = new Gson().toJson(mPayload);
-
+        System.out.println(json);
         HttpResponse<JsonNode> jsonResponse = null;
         try {
             jsonResponse = Unirest.post(GCM_API_URL)
@@ -107,6 +85,7 @@ public class NotificationManager {
             if(jsonResponse.getStatus()==SUCCESSFUL_SEND_CODE){
 
                 analyseGCMResponse(jsonResponse.getBody().toString());
+                return jsonResponse.getBody().toString();
 
             }
 
@@ -115,10 +94,10 @@ public class NotificationManager {
             e.printStackTrace();
         }
 
-        System.out.println("Status  "+jsonResponse.getStatus());
+        /*System.out.println("Status  "+jsonResponse.getStatus());
         System.out.println("Status Next   " +jsonResponse.getStatusText());
         System.out.println("Body   " +jsonResponse.getBody());
-        System.out.println("Raw Body   " +jsonResponse.getRawBody());
+        System.out.println("Raw Body   " +jsonResponse.getRawBody());*/
 
         /*Future<HttpResponse<JsonNode>> jsonResponse = Unirest.post(GCM_API_URL)
                 .headers(headers)
@@ -138,6 +117,6 @@ public class NotificationManager {
                     System.out.println("The request has been cancelled");
                 }
             });*/
-
+        return null;
     }
 }

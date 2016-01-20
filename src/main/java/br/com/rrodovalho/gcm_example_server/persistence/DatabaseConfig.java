@@ -13,8 +13,6 @@ import javax.sql.DataSource;
 import org.apache.commons.dbcp.BasicDataSource;
 
 
-
-
 @Configuration
 @MapperScan(basePackages="br.com.rrodovalho.gcm_example_server.persistence")
 public class DatabaseConfig {
