@@ -2,11 +2,9 @@ package br.com.rrodovalho.gcm_example_server.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import java.sql.Timestamp;
-import java.util.Calendar;
 
 /**
  * Created by rrodovalho on 14/01/16.
@@ -14,12 +12,13 @@ import java.util.Calendar;
 
 @Data
 @AllArgsConstructor
+@RequiredArgsConstructor
 public class User{
 
     private long id;
     private String registrationID;
+    private Timestamp registrationDate;
     private String name;
-    private java.sql.Timestamp registrationDate;
 
 }
 

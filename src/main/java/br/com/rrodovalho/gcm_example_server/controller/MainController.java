@@ -35,6 +35,12 @@ public class MainController {
         return userDAO.getUserByName(name);
     }
 
+    @RequestMapping(value = "/users", method = RequestMethod.GET)
+    public @ResponseBody List<User> getAllUsers() {
+        List<User> u = userDAO.getAllUsers();
+        return u;
+    }
+
     @RequestMapping(value = "/send-push",method = RequestMethod.POST)
     public @ResponseBody String sendPushNotification(@RequestBody String content){
 
