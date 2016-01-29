@@ -2,7 +2,6 @@ package br.com.rrodovalho.gcm_example_server.model;
 
 import br.com.rrodovalho.gcm_example_server.domain.PushMessageContent;
 import br.com.rrodovalho.gcm_example_server.domain.PushMessageResponse;
-import br.com.rrodovalho.gcm_example_server.domain.User;
 import br.com.rrodovalho.gcm_example_server.service.UserService;
 import com.google.gson.Gson;
 import com.mashape.unirest.http.HttpResponse;
@@ -92,6 +91,7 @@ public class NotificationManager {
 
         } catch (UnirestException e) {
             e.printStackTrace();
+            return e.getMessage();
         }
 
         /*System.out.println("Status  "+jsonResponse.getStatus());

@@ -1,6 +1,6 @@
 package br.com.rrodovalho.gcm_example_server.domain;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -9,8 +9,8 @@ import java.util.Map;
 /**
  * Created by rrodovalho on 16/01/16.
  */
+@Builder
 @Data
-@AllArgsConstructor
 public class PushMessageContent {
 
     //Reference

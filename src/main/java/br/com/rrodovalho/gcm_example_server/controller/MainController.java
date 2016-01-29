@@ -1,6 +1,7 @@
 package br.com.rrodovalho.gcm_example_server.controller;
 
 import br.com.rrodovalho.gcm_example_server.GcmExampleServerApplication;
+import br.com.rrodovalho.gcm_example_server.domain.NotificationBuilder;
 import br.com.rrodovalho.gcm_example_server.domain.PushMessageContent;
 import br.com.rrodovalho.gcm_example_server.domain.User;
 import br.com.rrodovalho.gcm_example_server.model.NotificationManager;
@@ -45,18 +46,20 @@ public class MainController {
     public @ResponseBody String sendPushNotification(@RequestBody String content){
 
         JsonParser parser = new JsonParser();
-        JsonObject o = parser.parse(content).getAsJsonObject();
+        JsonObject jsonObject = parser.parse(content).getAsJsonObject();
 
         ArrayList<String> registrationIDs = new ArrayList<>();
-        if(o.get("toAll").getAsBoolean()){
+        if(jsonObject.get("toAll").getAsBoolean()){
             List<User> users = userDAO.getAllUsers();
-            for(int i=0;i<users.size();i++){
-                registrationIDs.add(users.get(i).getRegistrationID());
+            if(users!=null) {
+                for (int i = 0; i < users.size(); i++) {
+                    registrationIDs.add(users.get(i).getRegistrationID());
+                }
             }
         }
         else{
-            JsonArray userIDs = o.getAsJsonArray("user_ids");
-            String regID = null;
+            JsonArray userIDs = jsonObject.getAsJsonArray("user_ids");
+            String regID;
             for(int i=0;i<userIDs.size();i++){
                 regID = userDAO.getRegistrationIDByUserID(userIDs.get(i).getAsInt());
                 if(regID!=null){
@@ -67,30 +70,37 @@ public class MainController {
 
         if(registrationIDs.size()>0){
 
-            Map<String,String> data = new HashMap<>();
-            data.put("title",o.get("title").getAsString());
-            data.put("message",o.get("message").getAsString());
+            JsonObject payload = jsonObject.get("data").getAsJsonObject();
 
+            Map<String,String> data = new HashMap<>();
+            data.put("title",payload.get("title").getAsString());
+            data.put("message",payload.get("message").getAsString());
+
+            payload = jsonObject.get("notification").getAsJsonObject();
+
+            Map<String,String> notificationContent =
+                    new NotificationBuilder()
+                        .addTitile(payload.get("title").getAsString())
+                        .addBody(payload.get("body").getAsString())
+                        .addIcon(payload.get("icon").getAsString())
+                        .build();
 
             PushMessageContent pushMessageContent =
-                    new PushMessageContent("gcm_example"
-                            ,false
-                            ,PushMessageContent.MAX_MESSAGE_TTL
-                            ,GcmExampleServerApplication.GCM_EXAMPLE_B2C_PACKAGE
-                            ,false
-                            ,data
-                            ,null
-                            ,registrationIDs
-                    );
+                    PushMessageContent.builder()
+                        .collapse_key("gcm_example")
+                        .delay_while_idle(false)
+                        .dry_run(false)
+                        .time_to_live(PushMessageContent.MAX_MESSAGE_TTL)
+                        .restricted_package_name(GcmExampleServerApplication.GCM_EXAMPLE_B2C_PACKAGE)
+                        .data(data)
+                        .registration_ids(registrationIDs)
+                        .notification(notificationContent)
+                        .build();
 
             NotificationManager notificationManager = new NotificationManager(userDAO,pushMessageContent, GcmExampleServerApplication.SENDER_API_KEY);
 
             return notificationManager.sendNotification();
 
-            //collapse_key - caso o device esteja desligado, e voce mande mtas mensagens
-            // , o gcm n garante ordem de entrega
-            //  entao, se utilizar essa flag, ele vai guardar no servidor do gcm somente a ultima mensagem
-            // dessa tag
         }
 
         return "{\"error\":\"No users found\"}";
